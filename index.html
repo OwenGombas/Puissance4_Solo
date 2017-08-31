@@ -1,0 +1,323 @@
+<html>
+<head>
+    <link href="https://fonts.googleapis.com/css?family=Roboto:100" rel="stylesheet">
+    <style>
+        
+        * {
+            -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+        }
+
+        header{
+            height: 3vh;
+            width: 100%;
+            transition: all .3s ease-in-out 0s;
+        }
+
+        body {
+            overflow: hidden;
+            padding: 0;
+            margin: 0;
+        }
+
+        #title {
+            color: rgb(70, 70, 70);
+            font-size: 4.5vh;
+            margin-top: 3vh;
+        }
+
+        table {
+            width: 100%;
+            height: 75vh;
+        }
+
+        td {
+            cursor: pointer;
+            background: rgb(245, 245, 245);
+            transition: all .25s ease-in-out 0s;
+            border-radius: 3px;
+            border: 2px solid transparent;
+        }
+
+        td:active{
+            border-color: rgb(180, 180, 180);
+        }
+
+        h1 {
+            text-align: center;
+            font-family: Roboto;
+            letter-spacing: 1px;
+            font-size: 1.8em;
+            transition: opacity .25s ease-in-out 0s;
+            font-weight: 100;
+            cursor: default;
+        }
+
+        #info {
+            left: 0;
+            background: rgb(50, 50, 50);
+            opacity: 0;
+            width: 100%;
+            font-size: 5vh;
+            top: 50vh;
+            transform: translateY(-50%);
+            color: white;
+            padding-top: 2.5vh;
+            padding-bottom: 2.5vh;
+            position: absolute;
+            display: none;
+            letter-spacing: 1px;
+            transition: all .25s ease-in-out 0s;
+        }
+
+        button {
+            padding-top: 1.5vh;
+            padding-bottom: 1.5vh;
+            padding-left: 3%;
+            padding-right: 3%;
+            cursor: pointer;
+            outline: none;
+            margin-left: auto;
+            margin-right: auto;
+            margin-top: 3vh;
+            display: block;
+            background: #EEEEEE;
+            border-radius: 2vh;
+            color: rgb(50, 50, 50);
+            font-family: Roboto;
+            font-size: 3vh;
+            border: none;
+            transition: all .1s ease-in-out 0s;
+            box-shadow: 0px 0px 25px 0px rgba(176,176,176,0.19);
+        }
+
+        button:active {
+            transform: scale(.94);
+            box-shadow: 0px 0px 0px 0px rgba(176,176,176,0.22);
+        }
+
+        .cellBlue {
+            background: #29D2E4;
+        }
+
+        .cellRed {
+            background: #F73859;
+        }
+
+        .cellBlueHover {
+            background: rgba(41, 210, 228, .15);
+        }
+
+        .cellRedHover {
+            background: rgba(247, 56, 89, .15);
+        }
+
+        .animate {
+            transform: scale(1.05);
+        }
+
+        .cellBase {
+            opacity: 1;
+        }
+
+        .cellEnd {
+            opacity: .2;
+        }
+
+        .noselect {
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+    </style>
+
+    <script type="text/javascript">
+        var bEnd = false;
+        var tCases = [];
+        var bPlayerOne = true;
+        var Rows;
+        var Columns;
+
+        function Initialize(cols, rows) {
+            Rows = rows;
+            Columns = cols;
+
+            bEnd = false;
+            tCases = [];
+            bPlayerOne = true;
+
+            var grid = document.getElementById('grid');
+            grid.innerHTML = "";
+
+            for (var r = 0; r < rows; ++r) {
+                var tr = grid.appendChild(document.createElement('tr'));
+                for (var c = 0; c < cols; ++c) {
+                    var _case = new Case(c, r, 0);
+                    _case.Create(tr);
+                    tCases.push(_case);
+                }
+            }
+            document.getElementById('content').appendChild(grid);
+        }
+
+        function Case(X, Y, Clicker, id) {
+            this.Element = document.createElement('td');
+            this.Element.Clicker = Clicker;
+            this.Element.X = X;
+            this.Element.Y = Y;
+
+            this.Create = function (i) {
+                this.Element.onmouseover = function (e){
+                    if(!bEnd)
+                        Hover(e.target);
+                }
+                
+                this.Element.onmouseout = function (e){
+                    Unhover(e.target);
+                }
+                
+                this.Element.onclick = function (e) {
+                    if (!bEnd) {
+                        var c = CountCasesColumn(e.target.X).Element;
+                        if (c.Clicker === 0) {
+                            c.className = '';
+                            if (bPlayerOne) {
+                                c.classList.add('cellBlue');
+                                c.Clicker = 1;
+                            } else {
+                                c.classList.add('cellRed');
+                                c.Clicker = 2;
+                            }
+                            c.classList.add('animate');
+                            setTimeout(function () {
+                                c.classList.remove('animate');
+                            }, 200);
+                            bPlayerOne = !bPlayerOne;
+                            Hover(e.target);
+                            
+                            var tDirections = [
+                                tCases.filter(function (a) { return a.Element.X == c.X }),
+                                tCases.filter(function (a) { return a.Element.Y == c.Y }),
+                                tCases.filter(function (a) { return a.Element.X - c.X == a.Element.Y - c.Y }),
+                                tCases.filter(function (a) { return -(a.Element.X - c.X) == a.Element.Y - c.Y })
+                            ];
+
+                            for (var i = 0; i < tDirections.length; i++) {
+                                var lWin = [];
+                                for (var j = 0; j < tDirections[i].length; j++) {
+                                    if (tDirections[i][j].Element.Clicker == c.Clicker) {
+                                        lWin.push(tDirections[i][j]);
+                                        if (lWin.length >= 4) {
+                                            bEnd = true;
+                                            Message("Le joueur " + c.Clicker + " a gagné");
+                                            for (var i = 0; i < tCases.length; i++) {
+                                                if (lWin.indexOf(tCases[i]) < 0 && tCases[i].Element.Clicker > 0) {
+                                                    tCases[i].Element.style.opacity = .2;
+                                                }
+                                            }
+                                            Unhover(e.target);
+                                            break;
+                                        }
+                                    } else lWin = [];
+                                }
+                            }
+                            
+                            if (AllClicked() >= tCases.length && !bEnd) {
+                                bEnd = true;
+                                Message("Egalité");
+                                for (var i = 0; i < tCases.length; i++) {
+                                    tCases[i].Element.style.opacity = .2;
+                                }
+                                Unhover(e.target);
+                            }
+                        }
+                    }
+                };
+                i.appendChild(this.Element);
+            }
+        }
+        
+        function Hover(e) {
+            var c = CountCasesColumn(e.X).Element
+            if(bPlayerOne)
+                c.classList.add('cellBlueHover');
+            else
+                c.classList.add('cellRedHover');
+        }
+        
+        function Unhover(e) {
+            var c = CountCasesColumn(e.X).Element;
+            if(c.Clicker === 0)
+                c.className = '';
+        }
+        
+        function CaseXY(x, y) {
+            for (var i = 0; i < tCases.length; i++) {
+                if (tCases[i].Element.X == x && tCases[i].Element.Y == y) {
+                    return tCases[i];
+                }
+            }
+            return new Case(0, 0, -1);
+        }
+
+        function CountCasesColumn(Column) {
+            var Count = 0;
+            var Case;
+            for (var i = 0; i < tCases.length; i++) {
+                if (tCases[i].Element.X == Column && tCases[i].Element.Clicker > 0) {
+                    Count++;
+                }
+            }
+            return CaseXY(Column, Rows - Count - 1);
+        }
+
+        function AllClicked() {
+            var Count = 0;
+            for (var i = 0; i < tCases.length; i++) {
+                if (tCases[i].Element.Clicker > 0) {
+                    Count++;
+                }
+            }
+            return Count;
+        }
+
+        function Message(msg) {
+            var info = document.getElementById('info');
+            info.innerHTML = msg;
+            info.style.opacity = .8;
+            setTimeout(function () {
+                info.style.display = "block";
+            }, 350);
+        }
+
+        function CancelMessage() {
+            var info = document.getElementById('info');
+            info.style.opacity = 0;
+            setTimeout(function () {
+                info.style.display = "none";
+            }, 350);
+        }
+
+        function Reset(cols, rows) {
+            for (var i = 0; i < tCases.length; i++) {
+                tCases[i].Element.className = '';
+            }
+            CancelMessage();
+            setTimeout(function () {
+                Initialize(cols, rows);
+            }, 350);
+        }
+    </script>
+</head>
+
+<body onload="Initialize(7, 6)">
+    <div data-role="page" data-theme="b" class="noselect">
+        <h1 id="title">Puissance 4</h1>
+        <table id="grid"></table>
+        <h1 id="info"></h1>
+        <button onclick="Reset(7, 6)">Rejouer</button>
+    </div>
+</body>
+</html>	
